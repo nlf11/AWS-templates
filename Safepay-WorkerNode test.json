@@ -1,0 +1,137 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Parameters": {
+        "eksclustername": {
+        "Type": "String",
+        "Default": "Safepay-EKS",
+        "Description": "Name of the EKS cluster."
+        },
+        "eksversion": {
+        "Type": "String",
+        "Default": "1.21"
+            },
+    
+        "VPC": {
+                "Type": "AWS::EC2::VPC::Id",
+                "Description": "Name of an existing VPC in your Region"
+            },
+        "Privatesubnet1": {
+                "Type": "AWS::EC2::Subnet::Id",
+                "Description": "Select 1st Private Subnet fom your existing VPC"
+            },
+        "Privatesubnet2": {
+                "Type": "AWS::EC2::Subnet::Id",
+                "Description": "Select 2nd Private Subnet fom your existing VPC"
+            }       
+    },
+    
+    "Resources": {
+        "EKSSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "GroupDescription": "SG For EKS"
+            }
+        },
+
+        "EKSCluster": {
+            "Type": "AWS::EKS::Cluster",
+                "Properties": {
+                "Name": {"Ref": "eksclustername"},
+                "Version": {
+                "Ref": "eksversion"
+                },
+                "RoleArn": "arn:aws:iam::678878256416:role/AWS-EKS-Demo",
+                "ResourcesVpcConfig": {
+                "SecurityGroupIds":  [{"Ref":"EKSSG"}],
+                "SubnetIds": [{"Ref" : "Privatesubnet1"},
+                    {"Ref" : "Privatesubnet2"}],
+                "EndpointPublicAccess": false,
+                "EndpointPrivateAccess": true
+                },
+    
+    
+                "Logging": {
+                "ClusterLogging": {
+                "EnabledTypes": [{
+                "Type": "api"
+                },
+                {
+                "Type": "audit"
+                }]
+                }} }
+                },
+
+                "egress1": {
+                    "Type": "AWS::EC2::SecurityGroupEgress",
+                    "Properties": {
+                        "GroupId": {
+                            "Ref": "EKSSG"
+                        },
+                        "IpProtocol": "-1",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                },
+                "Port80": {
+                    "Type": "AWS::EC2::SecurityGroupIngress",
+                    "Properties": {
+                        "GroupId": {
+                            "Ref": "EKSSG"
+                        },
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                },
+                "Port22": {
+                    "Type": "AWS::EC2::SecurityGroupIngress",
+                    "Properties": {
+                        "GroupId": {
+                            "Ref": "EKSSG"
+                        },
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                },
+        
+        "EKSNodegroup": {
+                    "Type": "AWS::EKS::Nodegroup",
+                    "Properties": {
+                        "ClusterName": {"Ref": "eksclustername"},
+                        "NodeRole": "arn:aws:iam::678878256416:role/AWS-EKS-WorkerNode",
+                        "ScalingConfig": {
+                            "MinSize": 2,
+                            "DesiredSize": 3,
+                            "MaxSize": 5
+                        },
+                        "Labels": {
+                            "Key1": "Value1",
+                            "Key2": "Value2"
+                        },
+                        "Subnets":  [{"Ref" : "Privatesubnet1"},
+                            {"Ref" : "Privatesubnet2"}]
+                    }
+                }
+            },
+    
+    
+    
+    "Outputs": {
+        "eksclustername": {
+        "Value": {
+        "Ref": "EKSCluster"
+        },
+        "Description": "Name of the Eks cluster",
+        "Export": {
+        "Name": {
+        "Fn::Sub": "${AWS::StackName}-eksclustername"
+        }
+        }
+        }
+        }
+    }

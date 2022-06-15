@@ -1,0 +1,142 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This Template includes Safepay Bastion Host resources provisining",
+
+    "Parameters": {
+        "BastionHostInstanceType": {
+            "Description": "The EC2 instance type",
+            "Type": "String",
+            "Default": "t3.micro",
+            "AllowedValues": [
+                "t3.medium",
+                "t3.micro",
+                "t3.large"         
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type."
+        },
+        "KeyName": {
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the EC2 instances"
+        },
+        "ImageID": {
+            "Description": "Enter the Image ID",
+            "Type": "String",
+            "ConstraintDescription": "must be a valid Image ID."
+        },        
+        
+        "BastionHostAllocatedStorage": {
+            "Description": "EBS Volume Size in GB",
+            "Type": "Number",
+            "Default": "8",
+            "AllowedValues": [
+                "8",
+                "20",
+                "30",
+                "60"
+            ],
+            "ConstraintDescription": "must be between 8 and 60GB."
+        },
+        "BastionHostServerVolume": {
+            "Description": "EBS Volume Type",
+            "Type": "String",
+            "Default": "gp2",
+            "ConstraintDescription": "must be valid EBS Storage Type."
+        },
+        "VPC": {
+            "Type": "AWS::EC2::VPC::Id",
+            "Description": "Name of an existing VPC in your Region"
+        },
+        "PublicSubnet1": {
+            "Type": "AWS::EC2::Subnet::Id",
+            "Description": "Select 1st Public Subnet fom your existing VPC"
+        }
+        
+    },
+
+    "Resources": {
+        "BastionHostSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "GroupDescription": "SG For BastionHost"
+            }
+        },
+        "BastionHostserver": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "ImageId" : {"Ref":"ImageID"},
+                "KeyName" : {"Ref":"KeyName"},
+                "SecurityGroupIds": [{"Ref":"BastionHostSG"}],
+                "InstanceType" : {"Ref":"BastionHostInstanceType"},
+                "SubnetId": { "Ref" : "PublicSubnet1" },
+                           
+                
+                "BlockDeviceMappings": [   
+                    {
+                        "DeviceName": "/dev/xvda",
+
+
+                        "Ebs": {
+                            "VolumeType": {
+                                "Ref": "BastionHostServerVolume"
+                            },
+                            "DeleteOnTermination": "true",
+                            "VolumeSize": {
+                                "Ref": "BastionHostAllocatedStorage"
+                            }
+                        }
+                    }
+                ]                               
+            }
+        },
+
+        "EIP":{
+            "Type" : "AWS::EC2::EIP",
+            "Properties" : {
+              
+                "InstanceId" : {"Ref":"BastionHostserver"}
+                
+                
+              }
+          },
+          
+
+        "egress1": {
+            "Type": "AWS::EC2::SecurityGroupEgress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "BastionHostSG"
+                },
+                "IpProtocol": "-1",
+                "CidrIp": "0.0.0.0/0"
+            }
+        },
+        "Port80": {
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "BastionHostSG"
+                },
+                "IpProtocol": "tcp",
+                "FromPort": "80",
+                "ToPort": "80",
+                "CidrIp": "0.0.0.0/0"
+            }
+        },
+        "Port22": {
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "BastionHostSG"
+                },
+                "IpProtocol": "tcp",
+                "FromPort": "22",
+                "ToPort": "22",
+                "CidrIp": "0.0.0.0/0"
+            }
+        }
+       
+    }
+}

@@ -1,0 +1,55 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This Template will create AWS S3 Bucket.",
+    "Parameters":{
+        "S3BucketName": {
+            "Description": "Provide the Valid S3 Bucket Name",
+            "Type": "String",
+            "ConstraintDescription": "Must be Valid Name"
+        },
+
+        "KMSKEY": {
+            "Description": "Paste the KMS KEY ARN Here",
+            "Type": "String",
+            "ConstraintDescription": "Must be Valid KMS ARN type"
+        }
+       
+    },
+
+    "Resources": {
+        "S3Bucket" : {
+        "Type" : "AWS::S3::Bucket",
+        "DeletionPolicy": "Retain",
+            "Properties" : {
+               "BucketName" : { "Ref": "S3BucketName"},
+               "BucketEncryption": {
+                "ServerSideEncryptionConfiguration": [{
+                  "ServerSideEncryptionByDefault": {
+                    "KMSMasterKeyID" : { "Ref": "KMSKEY"},
+                    "SSEAlgorithm": "aws:kms"
+                  }
+                }]
+              },
+              "VersioningConfiguration": {
+                "Status": "Enabled"
+            }
+            }  
+        }
+    }, 
+       
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+           "ParameterGroups": [
+               {
+                   "Label": {
+                       "default": "S3 Bucket details"
+                   },
+                   "Parameters": [
+                            "S3BucketName",
+                            "KMSKEY"
+                    ]
+               }
+            ] 
+        }
+    }
+}

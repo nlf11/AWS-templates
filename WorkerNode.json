@@ -1,0 +1,24 @@
+{
+    "Resources": {
+        "EKSNodegroup": {
+            "Type": "AWS::EKS::Nodegroup",
+            "Properties": {
+                "ClusterName": "Safepay-EKS",
+                "NodeRole": "arn:aws:iam::700318209168:role/aws-eks-node-role",
+                "ScalingConfig": {
+                    "MinSize": 1,
+                    "DesiredSize": 2,
+                    "MaxSize": 4
+                },
+                "Labels": {
+                    "Key1": "Value1",
+                    "Key2": "Value2"
+                },
+                "Subnets": [
+                    "subnet-02af7e51fe511ef61",
+                    "subnet-059ea5b7643b96ba7"
+                ]
+            }
+        }
+    }
+}

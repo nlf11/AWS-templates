@@ -1,0 +1,609 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This is a Generic Template for RedisCache",
+    "Parameters": {
+       "ExistingCacheSubnetGroupName": {
+            
+            "Description": "Use existing ElastiCache Subnet Group Name",
+            "Type": "String"
+            
+        },
+       "ExistingCacheSecuritygroupname": {
+            
+            "Description": "Use existing SecurityGroup ID",
+            "Type": "String"
+        },
+       "ReplicationGroupDescription": {
+            
+            "Description": "ReplicationGroupDescription",
+            "Type": "String",
+            "ConstraintDescription": "must begin with a letter and contain only alphabets."
+        },   
+       "CacheNodeTypes": {
+            "Description": "Database instance class",
+            "Type": "String",
+            "Default": "cache.t2.medium",
+            "AllowedValues": [
+                "cache.t2.micro",
+                "cache.t2.small",
+                "cache.t2.medium"
+                
+            ],
+            "ConstraintDescription": "must select a valid database instance type."
+        },
+        "AutoMinorVersionUpgrade" : {
+          
+            "Description": "Select true If required AutoMinorVersionUpgrade",
+            "Type": "String",
+            "Default" : "false",
+            "AllowedValues": [
+                "true",
+                "false"
+            ],
+            "ConstraintDescription": "must be either true or false."
+        },
+        "AuthToken": {
+            
+            "Description": "At least 16 characters, and maximum 128 characters, restricted to any printable ASCII character except ',/ and @ signs.",
+            "Type": "String",
+            "NoEcho": "true",
+            "MinLength": "16",
+            "MaxLength": "128",
+           
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },  
+        "AutomaticFailoverEnabled" : {
+          
+            "Description": "Select true if you want to enable Multi-AZ with Failover.",
+            "Type": "String",
+            "Default" : "false",
+            "AllowedValues": [
+                "true",
+                "false"
+            ],
+            "ConstraintDescription": "must be either true or false."
+        },
+        "ElastiCacheParameterGroup" : {
+          
+            "Description": "Elastic Cache parameter group.",
+            "Type": "String",
+            "Default" : "default.redis3.2",
+            "AllowedValues": [
+                "default.redis3.2",
+                "default.redis3.2.cluster.on"
+            ],
+            "ConstraintDescription": "must be either default.redis3.2 or default.redis3.2.cluster.on"
+        },
+        "NumberofShards": {
+            "Default": "1",
+            "Description": "Select More than 1 when using cluster mode.(elastiCacheparametergroup=default.redis3.2.cluster.on).Range Should be 1 to 15.",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "15",
+            "ConstraintDescription": "must be between 1 and 15."
+        },
+        "ReplicasPerNodeGroup" : {
+            "Default": "1",
+            "Description": "The number of replicas cache nodes. Value must be between 1 to 5",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "5",
+            "ConstraintDescription": "must be between 1 and 5."
+        },
+        "SnapshotWindow": {
+            
+            "Description": "The time range (in UTC) when ElastiCache takes a daily snapshot. you can specify 05:00-09:00.",
+            "Type": "String",
+             "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+        "PreferredMaintenanceWindow": {
+            
+            "Description": "The weekly time range during which system maintenance can occur.you can specify sun:22:00-sun:23:30",
+            "Type": "String",
+             "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+        "ElastiCachePort" : {
+            "Description": "Elastic Cache Default Port",
+            "Default": "6379",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "65535",
+            "ConstraintDescription": "DB Port must be between 1 and 65535."
+                    },
+        "NotificationTopicArn": {
+            "Description": "The ARN of the Amazon (SNS) topic to which notifications will be sent.",
+            "Type": "String",
+            "ConstraintDescription": "Must be Valid ARN"
+        },
+        
+        "SnapshotArns": {
+            "Description": "The ARN of the snapshot file that you want to use to seed a new Redis cache cluster.",
+            "Type": "String",
+            "ConstraintDescription": "Must be Valid ARN"
+        },
+        "SnapshotName": {
+            "Description": "The name of a snapshot from which to restore data into a new Redis cache cluster.",
+            "Type": "String",
+            "ConstraintDescription": "letter and contain only alphanumeric characters."
+        },
+        "SnapshotRetentionLimit": {
+            "Default": "1",
+            "Description": "The number of days for which ElastiCache retains automatic snapshots before deleting them",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "35",
+            "ConstraintDescription": "must be between 1 and 15."
+        },
+      
+        
+        
+		"CAGroup": {
+            
+            "Description": "Tag: CA Group",
+            "Type": "String",
+			"Default": "Example CA group"
+            
+        },
+		"ServerDescription": {
+            
+            "Description": "Tag: Server Description",
+            "Type": "String",
+			"Default": "Example Server Description"
+            
+        },
+		"Clarity": {
+            
+            "Description": "Tag: Clarity",
+            "Type": "String",
+			"Default": "Example Clarity"
+            
+        },
+		"Dept": {
+            
+            "Description": "Tag: Dept",
+            "Type": "String",
+			"Default": "Example Dept"
+            
+        },
+		"EAPMID": {
+            
+            "Description": "Tag: EAPM-ID",
+            "Type": "String",
+			"Default": "Example EAPM-ID"
+            
+        },
+		"Name": {
+            
+            "Description": "Tag: Name",
+            "Type": "String",
+			"Default": "Example Name"
+            
+        }	
+       
+       },
+    
+    "Conditions" : {
+    
+    "Snapshots": {"Fn::And": [
+        
+     {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SnapshotRetentionLimit"}]}]},
+     {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SnapshotWindow"}]}]},
+     {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SnapshotArns"}]}]},
+     {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "SnapshotName"}]}]}
+     ]},
+    "MaintenanceWindow": {"Fn::Not": [{"Fn::Equals": ["", {"Ref": "PreferredMaintenanceWindow"}]}]}
+    
+        
+    },  
+     
+    "Resources": {
+    
+     "ElastiCacheSimple" : {
+     "Type" : "AWS::ElastiCache::ReplicationGroup",
+     "Properties" : {
+         
+    "AtRestEncryptionEnabled" : "true",
+    "CacheParameterGroupName" : { "Ref" : "ElastiCacheParameterGroup" },
+    "AutomaticFailoverEnabled" : { "Ref" : "AutomaticFailoverEnabled" },
+    "AuthToken" : { "Ref" : "AuthToken" },
+    "AutoMinorVersionUpgrade" : { "Ref" :  "AutoMinorVersionUpgrade"},
+    "CacheSubnetGroupName" :{ "Ref" :  "ExistingCacheSubnetGroupName"},
+    "ReplicationGroupDescription": { "Ref" :  "ReplicationGroupDescription"},
+    "CacheNodeType" : { "Ref" :  "CacheNodeTypes"},
+    "Engine" : "redis",
+    "EngineVersion" : "3.2.6",
+    "NotificationTopicArn" : { "Ref" :  "NotificationTopicArn"},
+    "Port" : { "Ref" :  "ElastiCachePort"}, 
+    "SecurityGroupIds" : [{ "Ref" :  "ExistingCacheSecuritygroupname"}],
+   
+    "ReplicasPerNodeGroup" : { "Ref" :  "ReplicasPerNodeGroup"},
+    "NumNodeGroups" : { "Ref" :  "NumberofShards"},
+    
+    "SnapshotRetentionLimit" : { 
+					"Fn::If" : [
+						"Snapshots",
+						{ "Ref" : "SnapshotRetentionLimit"},
+						{ "Ref" : "AWS::NoValue"}
+					]
+				},
+	"SnapshotWindow" : { 
+					"Fn::If" : [
+						"Snapshots",
+						{ "Ref" : "SnapshotWindow"},
+						{ "Ref" : "AWS::NoValue"}
+					]
+				},
+	"SnapshotArns" : { 
+					"Fn::If" : [
+						"Snapshots",
+						{ "Ref" : "SnapshotArns"},
+						{ "Ref" : "AWS::NoValue"}
+					]
+				},
+    "SnapshotName" :{ 
+					"Fn::If" : [
+						"Snapshots",
+						{ "Ref" : "SnapshotName"},
+						{ "Ref" : "AWS::NoValue"}
+					]
+				},
+				
+   "PreferredMaintenanceWindow" :	{ 
+					"Fn::If" : [
+						"MaintenanceWindow",
+						{ "Ref" : "PreferredMaintenanceWindow"},
+						{ "Ref" : "AWS::NoValue"}
+					]
+				},		
+    
+    "Tags": [
+         {"Key": "CAGroup","Value": { "Ref" : "CAGroup" }},
+         {"Key": "Clarity","Value": { "Ref" : "Clarity" }},
+         {"Key": "Dept", "Value": { "Ref" : "Dept" }},
+         {"Key": "EAPM ID", "Value": { "Ref" : "EAPMID" }},
+         {"Key": "Name","Value": {"Ref": "Name"}},
+         { "Key": "Server Description", "Value": { "Ref" : "ServerDescription" }}
+         ],
+    "TransitEncryptionEnabled" : "true"
+  }
+}
+   
+    
+     
+  },
+
+    "Metadata": {
+         "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "Network Parameters"
+                    },
+                    "Parameters": [
+                        "ExistingCacheSubnetGroupName",
+                        "ExistingCacheSecuritygroupname",
+                        "ElastiCachePort"
+                        
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "ElastiCache General parameters"
+                    },
+                    "Parameters": [
+                        "ReplicationGroupDescription",
+                        "CacheNodeTypes",
+                        "AutoMinorVersionUpgrade",
+                        "AutomaticFailoverEnabled",
+                        "NumberofShards",
+                        "ReplicasPerNodeGroup",
+                        "AuthToken"
+
+
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Cluster Enabled Parameters"
+                    },
+                    "Parameters": [
+                        "ElastiCacheParameterGroup"
+                        
+                        
+
+
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Snapshot & Maintenance Window (Optional)"
+                    },
+                    "Parameters": [
+                        "SnapshotWindow",
+                        "NotificationTopicArn",
+                        "SnapshotArns",
+                        "SnapshotName",
+                        "SnapshotRetentionLimit",
+                        "PreferredMaintenanceWindow"
+                        
+                        
+                        
+
+
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Tags required for Elastic cache"
+                    },
+                    "Parameters": [
+                        "CAGroup",
+                        "ServerDescription",
+                        "Clarity",
+                        "Dept",
+                        "EAPMID",
+                        "Name"
+                       
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "VPCID": {
+                    "default": "Which VPC should this be deployed to?"
+                }
+            }
+        },
+        "AWS::CloudFormation::Designer": {
+            "d2852e86-e9c2-4dc7-8b61-5141d46a8cf3": {
+                "size": {
+                    "width": 800,
+                    "height": 650
+                },
+                "position": {
+                    "x": 320,
+                    "y": 190
+                },
+                "z": 1,
+                "embeds": [
+                    "71e560b1-14de-478d-b081-2e65511665c1",
+                    "48fe744f-fb3e-419d-b00b-c55bb904855d",
+                    "ace17b37-c80b-445c-a515-8c3221c97ad9",
+                    "9c72b524-1744-4136-97cd-279f02012313",
+                    "cf9b793d-de72-4134-b14c-34d9cdebdf3a",
+                    "311ab7e5-92a6-4a83-a1a4-53d9ebf09c3c"
+                ]
+            },
+            "953a7a88-aff8-4637-bda9-174aa90441da": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 570,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "311ab7e5-92a6-4a83-a1a4-53d9ebf09c3c": {
+                "size": {
+                    "width": 190,
+                    "height": 140
+                },
+                "position": {
+                    "x": 900,
+                    "y": 290
+                },
+                "z": 2,
+                "parent": "d2852e86-e9c2-4dc7-8b61-5141d46a8cf3",
+                "embeds": [
+                    "d5acb621-4e52-414c-9635-716f9e45ae86"
+                ]
+            },
+            "c52a301a-29b4-4b81-a8af-cd2fb8ba96be": {
+                "source": {
+                    "id": "953a7a88-aff8-4637-bda9-174aa90441da"
+                },
+                "target": {
+                    "id": "d2852e86-e9c2-4dc7-8b61-5141d46a8cf3"
+                },
+                "z": 1
+            },
+            "cf9b793d-de72-4134-b14c-34d9cdebdf3a": {
+                "size": {
+                    "width": 90,
+                    "height": 90
+                },
+                "position": {
+                    "x": 990,
+                    "y": 490
+                },
+                "z": 2,
+                "parent": "d2852e86-e9c2-4dc7-8b61-5141d46a8cf3",
+                "embeds": []
+            },
+            "48fe744f-fb3e-419d-b00b-c55bb904855d": {
+                "size": {
+                    "width": 150,
+                    "height": 150
+                },
+                "position": {
+                    "x": 320,
+                    "y": 280
+                },
+                "z": 2,
+                "parent": "d2852e86-e9c2-4dc7-8b61-5141d46a8cf3",
+                "embeds": [
+                    "221fecf0-951b-4c38-9338-6f657c187257"
+                ]
+            },
+            "9c72b524-1744-4136-97cd-279f02012313": {
+                "size": {
+                    "width": 90,
+                    "height": 90
+                },
+                "position": {
+                    "x": 880,
+                    "y": 490
+                },
+                "z": 2,
+                "parent": "d2852e86-e9c2-4dc7-8b61-5141d46a8cf3",
+                "embeds": []
+            },
+            "c8fba508-c946-4bd6-a98a-e2c8e4ee0a6b": {
+                "source": {
+                    "id": "48fe744f-fb3e-419d-b00b-c55bb904855d"
+                },
+                "target": {
+                    "id": "311ab7e5-92a6-4a83-a1a4-53d9ebf09c3c"
+                },
+                "z": 2
+            },
+            "af100382-e698-4911-91cc-0d37313da442": {
+                "source": {
+                    "id": "d25c7324-0972-4d99-a2de-842cabfa2f3f"
+                },
+                "target": {
+                    "id": "d2852e86-e9c2-4dc7-8b61-5141d46a8cf3"
+                },
+                "z": 4
+            },
+            "ace17b37-c80b-445c-a515-8c3221c97ad9": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 770,
+                    "y": 350
+                },
+                "z": 2,
+                "parent": "d2852e86-e9c2-4dc7-8b61-5141d46a8cf3",
+                "embeds": []
+            },
+            "76d1b0d0-1151-486d-94be-ac8c0dc9b8d9": {
+                "source": {
+                    "id": "bf5f6814-8864-4378-b4b0-cae5b069ac08"
+                },
+                "target": {
+                    "id": "ace17b37-c80b-445c-a515-8c3221c97ad9"
+                },
+                "z": 4
+            },
+            "d5acb621-4e52-414c-9635-716f9e45ae86": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 910,
+                    "y": 350
+                },
+                "z": 3,
+                "parent": "311ab7e5-92a6-4a83-a1a4-53d9ebf09c3c",
+                "embeds": [],
+                "ismemberof": [
+                    "ace17b37-c80b-445c-a515-8c3221c97ad9"
+                ]
+            },
+            "4277222d-0b7e-4289-a2f3-fc12dd651485": {
+                "source": {
+                    "id": "d5acb621-4e52-414c-9635-716f9e45ae86"
+                },
+                "target": {
+                    "id": "ace17b37-c80b-445c-a515-8c3221c97ad9"
+                },
+                "z": 4
+            },
+            "71e560b1-14de-478d-b081-2e65511665c1": {
+                "size": {
+                    "width": 160,
+                    "height": 170
+                },
+                "position": {
+                    "x": 330,
+                    "y": 460
+                },
+                "z": 2,
+                "parent": "d2852e86-e9c2-4dc7-8b61-5141d46a8cf3",
+                "embeds": [
+                    "44961da4-4572-4b40-a941-3518799368ff"
+                ]
+            },
+            "13f6a1f4-9949-482e-972a-f3097311c6cc": {
+                "source": {
+                    "id": "71e560b1-14de-478d-b081-2e65511665c1"
+                },
+                "target": {
+                    "id": "9c72b524-1744-4136-97cd-279f02012313"
+                },
+                "z": 2
+            },
+            "1c94363b-0f18-466f-a347-8babf1f04da2": {
+                "source": {
+                    "id": "71e560b1-14de-478d-b081-2e65511665c1"
+                },
+                "target": {
+                    "id": "cf9b793d-de72-4134-b14c-34d9cdebdf3a"
+                },
+                "z": 2
+            },
+            "221fecf0-951b-4c38-9338-6f657c187257": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 360,
+                    "y": 310
+                },
+                "z": 3,
+                "parent": "48fe744f-fb3e-419d-b00b-c55bb904855d",
+                "embeds": [],
+                "references": [
+                    "953a7a88-aff8-4637-bda9-174aa90441da"
+                ],
+                "dependson": [
+                    "953a7a88-aff8-4637-bda9-174aa90441da"
+                ]
+            },
+            "44961da4-4572-4b40-a941-3518799368ff": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 420,
+                    "y": 490
+                },
+                "z": 3,
+                "parent": "71e560b1-14de-478d-b081-2e65511665c1",
+                "embeds": []
+            },
+            "b499d4ff-92bf-4eea-8b01-a7d8f92387fd": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 60,
+                    "y": 1050
+                },
+                "z": 1,
+                "embeds": [],
+                "isrelatedto": [
+                    "ace17b37-c80b-445c-a515-8c3221c97ad9"
+                ]
+            }
+        }
+    },
+    
+    "Outputs" : {
+        "PrimaryEndpoint": {
+          "Description" : "Primary endpoint of the cluster",
+          "Value" : "ConfigurationEndpoint.Address"
+        }
+    }
+       
+    
+}

@@ -1,0 +1,192 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This Template will createKMS Keys.",
+    "Parameters":{
+        "KeyAdministrator": {
+            "Description": "Provide the Valid Key administrator ARN",
+            "Type": "String",
+            "ConstraintDescription": "Must be Valid ARN"
+        },
+
+        "KeyUser": {
+            "Description": "Provide the Valid Key User ARN",
+            "Type": "String",
+            "ConstraintDescription": "Must be Valid ARN"
+        }
+       
+    },
+
+    "Resources": {
+        "EBSKMSKey": {
+            "Type" : "AWS::KMS::Key",
+            "Properties" : {
+                "Description" : "This key is used to decrypt EBS Volumes",
+                "Enabled" : "true",
+                "EnableKeyRotation" : "false",
+                "KeyPolicy" : {
+                    "Version": "2012-10-17",
+                    "Id": "key-consolepolicy-3",
+                    "Statement": [
+                        {
+                            "Sid": "Allow use of the key",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": [{"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"}]},
+                            "Action": [
+                                "kms:Encrypt",
+                                "kms:Decrypt",
+                                "kms:ReEncrypt*",
+                                "kms:GenerateDataKey*",
+                                "kms:DescribeKey"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "Allow attachment of persistent resources",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": [{"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling"
+                        }]},
+                            "Action": "kms:CreateGrant",
+                            "Resource": "*",
+                            "Condition": {
+                                "Bool": {
+                                    "kms:GrantIsForAWSResource": "true"
+                                }
+                            }
+                        },
+                        {
+                            "Sid": "Enable root Permissions",
+                            "Effect": "Allow",
+                            "Principal":  { "AWS": [{"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}]},
+                            "Action": "kms:*",
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "Allow use of the key",
+                            "Effect": "Allow",
+                            "Principal": {"AWS" : [{ "Ref": "KeyAdministrator"}]},
+                            "Action": [
+                                "kms:Encrypt",
+                                "kms:Decrypt",
+                                "kms:ReEncrypt*",
+                                "kms:GenerateDataKey*",
+                                "kms:DescribeKey"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "Allow attachment of persistent resources",
+                            "Effect": "Allow",
+                            "Principal": {"AWS" : [{ "Ref": "KeyAdministrator"}]},
+                            "Action": [
+                                "kms:CreateGrant",
+                                "kms:ListGrants",
+                                "kms:RevokeGrant"
+                            ],
+                            "Resource": "*",
+                            "Condition": {
+                                "Bool": {
+                                    "kms:GrantIsForAWSResource": "true"
+                                }
+                            }
+                        }
+                    ]
+                }
+                
+            }
+        },
+        "EBSKMSAlias":{
+            "Type" : "AWS::KMS::Alias",
+            "Properties" : {
+                "AliasName" : "alias/EBS",
+                "TargetKeyId" : {"Ref" : "EBSKMSKey"}
+            }
+        },
+
+        "S3KMSKey": {
+            "Type" : "AWS::KMS::Key",
+            "Properties" : {
+                "Description" : "This key is used to Encrypt S3 buckets",
+                "Enabled" : "true",
+                "EnableKeyRotation" : "false",
+                "KeyPolicy" : {
+                    "Version": "2012-10-17",
+                    "Id": "key-default-1",
+                    "Statement": [
+                        {
+                            "Sid": "Enable IAM User Permissions",
+                            "Effect": "Allow",
+                            "Principal":  { "AWS": [{"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}]},
+                            "Action": "kms:*",
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "Allow administration of the key",
+                            "Effect": "Allow",
+                            "Principal": {"AWS" : [{ "Ref": "KeyAdministrator"}]},
+                            "Action": [
+                              "kms:Create*",
+                              "kms:Describe*",
+                              "kms:Enable*",
+                              "kms:List*",
+                              "kms:Put*",
+                              "kms:Update*",
+                              "kms:Revoke*",
+                              "kms:Disable*",
+                              "kms:Get*",
+                              "kms:Delete*",
+                              "kms:ScheduleKeyDeletion",
+                              "kms:CancelKeyDeletion"
+                            ],
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "Allow use of the key",
+                            "Effect": "Allow",
+                            "Principal": {"AWS" : [{ "Ref": "KeyUser"}]},
+                            "Action": [
+                              "kms:DescribeKey",
+                              "kms:Encrypt",
+                              "kms:Decrypt",
+                              "kms:ReEncrypt*",
+                              "kms:GenerateDataKey",
+                              "kms:GenerateDataKeyWithoutPlaintext"
+                            ], 
+                            "Resource": "*"
+                          }  
+                       ]
+                },
+                "Tags" :[{
+                    "Key": "Alias",
+                    "Value": "S3Key"                       
+                }]
+
+            }
+        },
+        "S3KMSAlias":{
+            "Type" : "AWS::KMS::Alias",
+            "Properties" : {
+                "AliasName" : "alias/S3",
+                "TargetKeyId" : {"Ref" : "S3KMSKey"}
+            }
+        }        
+    },
+    
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+           "ParameterGroups": [
+               {
+                   "Label": {
+                       "default": "KMS Users & Administrators"
+                   },
+                   "Parameters": [
+                            "KeyAdministrator",
+                            "KeyUser"
+                            
+                        ]
+               }
+            ] 
+        }
+    }
+}

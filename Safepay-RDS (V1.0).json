@@ -1,0 +1,277 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This Template will create MySQL DB",
+    "Parameters": {
+
+        "DBInstanceID": {
+            "Default": "SafepayDBinstance",
+            "Description": "The DB Instance ID",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "63",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "Must begin with a letter and must not end with a hyphen or contain two consecutive hyphens."
+        },
+        "DBName": {
+            
+            "Description": "The database name",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "20",
+            "AllowedPattern": "[a-z,A-Z][a-z,A-Z,0-9][a-z,A-Z,0-9,.,@,-,_]*",
+            "ConstraintDescription": "must begin with a letter and contain only alphanumeric characters."
+        },
+        "DBUser": {
+            
+            "Description": "The Database Admin account Username",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "8",
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "ConstraintDescription": "Must begin with a letter and contain only Alphanumeric characters."
+        },
+        "DBPassword": {
+           
+            "NoEcho": "true",
+            "Description": "The database admin account password",
+            "Type": "String",
+            "MinLength": "6",
+            "MaxLength": "41",
+            "AllowedPattern": "[a-z,A-Z][a-z,A-Z,0-9][a-z,A-Z,0-9,.,@,-,_]*",
+            "ConstraintDescription": "Must begin with a letter and contain only Alphanumeric characters."
+        },
+        "DBClass": {
+            "Description": "Database instance class",
+            "Type": "String",
+            "Default": "db.t2.large",
+            "AllowedValues": [
+                "db.t2.large",
+                "db.t2.xlarge",
+                "db.t2.medium"
+            ],
+            "ConstraintDescription": "must select a valid database instance type."
+        },
+        "Engine": {
+            "Description": "Database instance class",
+            "Type": "String",
+            "Default": "5.7.21",
+            "AllowedValues": [
+                 "5.7.21",
+                 "5.7.19",
+                 "5.7.17",
+                 "5.7.16",
+                 "8.0.11",
+                 "8.0.28"
+            ],
+            
+            "ConstraintDescription": "Version number of the database engine to be used for this instance."
+        },
+        "MultiAZDatabase": {
+            "Default": "true",
+            "Description": "Create a Multi-AZ MySQL Amazon RDS database instance",
+            "Type": "String",
+            "AllowedValues": [
+                "true",
+                "false"
+            ],
+            "ConstraintDescription": "must be either true or false."
+        },
+        "ReadreplicaRequired": {
+            "Default": "true",
+            "Description": "Create a readreplica for MySQL",
+            "Type": "String",
+            "AllowedValues": [
+                "true",
+                "false"
+            ],
+            "ConstraintDescription": "must be either true or false."
+        },
+        "DBAllocatedStorage": {
+            "Default": "5",
+            "Description": "The size of the database (GB)",
+            "Type": "Number",
+            "MinValue": "5",
+            "MaxValue": "1024",
+            "ConstraintDescription": "must be between 5 and 1024GB."
+        },
+        "VPC": {
+            "Type": "AWS::EC2::VPC::Id",
+            "Description": "Name of an existing VPC in your Region"
+        },
+        "Encryption": {
+            "Description": "Paste the Key ARN Here",
+            "Type": "String",
+            "ConstraintDescription": "Must be Valid ARN"
+        },
+        "PrivateSubnet1": {
+            "Type": "AWS::EC2::Subnet::Id",
+            "Description": "Select 1st Private Subnet fom your existing VPC"
+        },
+        "PrivateSubnet2": {
+            "Type": "AWS::EC2::Subnet::Id",
+            "Description": "Select 2nd Private Subnet fom your existing VPC"
+        },
+        "DBPort" : {
+            "Description": "Custom DB port",
+            "Default": "3306",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "65535",
+            "ConstraintDescription": "DB Port must be between 1 and 65535."
+                    },
+        "BackupRetentionPeriod": {
+            "Description": "Select the number of days that Amazon RDS should retain automatic backups of this DB instance.",
+            "Default" : "7",
+            "Type": "Number",
+            "MinValue": "1",
+            "MaxValue": "35",
+            "ConstraintDescription": "Value must be between 1 and 35."
+        },
+		"Name": {
+            
+            "Description": "Tag: Name",
+            "Type": "String",
+			"Default": "Example Name"
+            
+        },	
+        "ReadReplicaName": {
+            "Description": "Tag: Read Replica Name",
+            "Type": "String",
+            "Default": "Example Read Replica Name"
+        }
+       },
+     "Conditions" : {
+    "CreateDBReplica" : {"Fn::Equals" : [{"Ref" : "ReadreplicaRequired"}, "true"]}
+  },
+    "Resources": {
+     "myDBSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Frontend Access",
+        "VpcId"            : { "Ref": "VPC"},
+        "SecurityGroupIngress" : [{
+          "IpProtocol" : "tcp",
+          "FromPort"   : 3306,
+          "ToPort"     : 3306,
+          "CidrIp"     : "0.0.0.0/0"
+        }]
+     }
+       },
+     "myDBSubnetGroup" : {
+      "Type" : "AWS::RDS::DBSubnetGroup",
+      "Properties" : {
+         "DBSubnetGroupDescription" : "DB Private Subnet",
+         "SubnetIds" : [
+          { "Ref": "PrivateSubnet1" }, {"Ref": "PrivateSubnet2"}
+          
+         ]
+      }
+    },
+     "MySQLDB" : {
+      "Type" : "AWS::RDS::DBInstance",
+      "Properties" : {
+        "DBInstanceIdentifier": {"Ref": "DBInstanceID"},
+        "DBName" : { "Ref" : "DBName" },
+        "AllocatedStorage" : { "Ref" : "DBAllocatedStorage" },
+        "DBInstanceClass" : { "Ref" : "DBClass" },
+        "Engine" : "mysql",
+        "EngineVersion" : { "Ref" : "Engine" },
+        "StorageEncrypted" : "true",
+        "MultiAZ" : { "Ref" : "MultiAZDatabase"},
+        "Port" : { "Ref" : "DBPort" },
+        "BackupRetentionPeriod" : { "Ref" : "BackupRetentionPeriod" },
+        "KmsKeyId" : { "Ref" : "Encryption"},
+        "MasterUsername" : { "Ref" : "DBUser" } ,
+        "MasterUserPassword" : { "Ref" : "DBPassword" },
+        "DBSubnetGroupName" : { "Ref" : "myDBSubnetGroup" },
+        "VPCSecurityGroups" : [ { "Fn::GetAtt" : [ "myDBSecurityGroup", "GroupId" ] } ],
+        "Tags": [
+         {"Key": "Name","Value": {"Ref": "Name"}}         
+         ]
+      }
+    },
+     "ReplicaDB": {
+            "Type": "AWS::RDS::DBInstance",
+            "Condition": "CreateDBReplica",
+            "Properties": {
+                "SourceDBInstanceIdentifier": {
+                    "Ref": "MySQLDB"
+                },
+                "DBInstanceClass": {
+                    "Ref": "DBClass"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "ReadReplicaName"
+                        }
+                    }
+                    
+                ]
+            }
+        }
+  },
+    "Outputs" : {
+        "MYSQLRDSOutput": {
+          "Description" : "MySQL connection string for the database",
+          "Value" : { "Fn::Join": [ "", [
+                                          { "Fn::GetAtt": [ "MySQLDB", "Endpoint.Address" ] },
+                                          ":",
+                                          { "Fn::GetAtt": [ "MySQLDB", "Endpoint.Port" ] },
+                                          "/",
+                                          { "Ref": "DBName" }]]}
+                                          
+    }},
+    "Metadata": {
+         "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "VPC, Subnet, and Encryption settings"
+                    },
+                    "Parameters": [
+                        "VPC",
+                        "PrivateSubnet1",
+                        "PrivateSubnet2",
+                        "Encryption"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "RDS Database parameters"
+                    },
+                    "Parameters": [
+                        "DBName",
+                        "DBUser",
+                        "DBPassword",
+                        "DBClass",
+                        "Engine",
+                        "DBPort",
+                        "MultiAZDatabase",
+                        "ReadreplicaRequired",
+                        "DBAllocatedStorage",
+                        "BackupRetentionPeriod"
+
+
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Tags required for RDS"
+                    },
+                    "Parameters": [
+                        "Name",
+                        "ReadReplicaName"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "VPCID": {
+                    "default": "Which VPC should this be deployed to?"
+                }
+            }
+        }
+        
+    }
+}
