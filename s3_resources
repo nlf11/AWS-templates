@@ -1,0 +1,52 @@
+For uploading data from local dir to AWS S3
+aws s3 cp test.txt s3://mybucket/test2.txt
+
+For uploading data from local dir to AWS S3 with expiration time
+aws s3 cp test.txt s3://mybucket/test2.txt --expires 2014-10-01T20:30:00Z
+
+
+To copy data from one bucket to another
+aws s3 cp s3://mybucket/test.txt s3://mybucket/test2.txt
+
+To download object from AWS S3 to Local Dir
+aws s3 cp s3://mybucket/test.txt test2.txt
+
+Sync from local directory to S3 bucket
+aws s3 sync . s3://mybucket
+
+Sync from S3 bucket to another S3 bucket
+aws s3 sync s3://mybucket s3://mybucket2 
+
+Sync from S3 bucket to local directory
+aws s3 sync s3://mybucket .
+
+
+Sync from local directory to S3 bucket while deleting files that exist in the destination but not in the source
+aws s3 sync . s3://mybucket --delete
+
+How to restrict Object
+aws s3api put-object-acl --bucket MyBucket --key file.txt --grant-full-control emailaddress=user1@example.com,emailaddress=user2@example.com --grant-read uri=http://acs.amazonaws.com/groups/global/AllUsers
+
+How to enable Versioning 
+aws s3api put-bucket-versioning --bucket my-bucket --versioning-configuration Status=Enabled
+
+
+Or apply a tagging configuration to my-bucket directly from the command line
+aws s3api put-bucket-tagging --bucket my-bucket --tagging 'TagSet=[{Key=organization,Value=marketing}]'
+
+
+
+The following example deletes filename.txt from s3://bucket-name/example.
+aws s3 rm s3://bucket-name/example/filename.txt --recursive
+
+The following example deletes all objects from s3://bucket-name/example using the --recursive option.
+aws s3 rm s3://bucket-name/example --recursive 
+
+
+The following command deletes an object named test.txt from a bucket named DOC-EXAMPLE-BUCKET1. To remove a specific version of an object, you must be the bucket owner and you must use the version Id subresource.
+aws s3api delete-object --bucket DOC-EXAMPLE-BUCKET1 --key test.txt --version-id versionID
+
+
+
+Object lifecycle 
+https://docs.aws.amazon.com/cli/latest/reference/s3api/put-bucket-lifecycle.html
