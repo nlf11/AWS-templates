@@ -1,0 +1,20 @@
+For 3.1.1:
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-iam-role.html
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-cli-creating-stack.html
+https://docs.aws.amazon.com/cli/latest/reference/iam/list-roles.html
+
+
+
+For 3.1.2
+https://docs.amazonaws.cn/en_us/IAM/latest/UserGuide/tutorial_managed-policies.html
+
+
+
+How to update the stack
+https://docs.aws.amazon.com/cli/latest/reference/cloudformation/update-stack.html
+
+
+How to delete the stack
+https://docs.aws.amazon.com/cli/latest/reference/cloudformation/delete-stack.html
+
+https://docs.amazonaws.cn/en_us/IAM/latest/UserGuide/tutorial_managed-policies.html
